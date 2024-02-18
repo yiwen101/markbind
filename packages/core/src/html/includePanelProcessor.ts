@@ -223,12 +223,7 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
   // the appropriate children to a wrapped include element
   if (hash) {
     const $ = cheerio.load(actualContent);
-    let actualContentOrNull = $(hash).html();
-    if (actualContentOrNull) {
-      actualContentOrNull = isInline
-        ? renderMdInline(actualContentOrNull)
-        : renderMd(actualContentOrNull);
-    }
+    const actualContentOrNull = $(hash).html();
     actualContent = actualContentOrNull || '';
 
     if (actualContentOrNull === null && !isOptional) {
@@ -238,13 +233,11 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
 
       actualContent = cheerio.html(createErrorNode(node, error));
     }
-  } else if (fsUtil.isMarkdownFileExt(path.extname(actualFilePath))) {
-    // console.log('actualContent', actualContent, 'isInline', isInline);
+  }
+  if (fsUtil.isMarkdownFileExt(path.extname(actualFilePath))) {
     actualContent = isInline
       ? renderMdInline(actualContent)
       : renderMd(actualContent);
-    // console.log('at line 225');
-    // console.log('actualContent', actualContent);
   }
 
   if (isTrim) {
