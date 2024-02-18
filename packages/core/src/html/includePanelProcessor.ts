@@ -4,6 +4,7 @@ import parse from 'url-parse';
 
 import has from 'lodash/has';
 import isEmpty from 'lodash/isEmpty';
+import { fn } from 'moment';
 import { createErrorNode, createSlotTemplateNode } from './elements';
 import CyclicReferenceError from '../errors/CyclicReferenceError';
 
@@ -188,7 +189,6 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
     actualFilePath,
     // We can typecast here as we have checked for src above.
   } = _getSrcFlagsAndFilePaths(node, config);
-
   // No need to process url contents
   if (isUrl) {
     _deleteIncludeAttributes(node);
@@ -219,16 +219,56 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
 
   let actualContent = nunjucksProcessed;
   if (fsUtil.isMarkdownFileExt(path.extname(actualFilePath))) {
+    // console.log('actualContent', actualContent, 'isInline', isInline);
     actualContent = isInline
       ? renderMdInline(actualContent)
       : renderMd(actualContent);
+    // console.log('at line 225');
+    // console.log('actualContent', actualContent);
   }
 
   // Process sources with or without hash, retrieving and appending
   // the appropriate children to a wrapped include element
   if (hash) {
+    console.log('hash', hash);
+    console.log('actualContent', actualContent);
     const $ = cheerio.load(actualContent);
-    const actualContentOrNull = $(hash).html();
+    // console.log('$', $);
+    let actualContentOrNull = $(hash).html();
+    if (actualContentOrNull) {
+      let actualContentStr = actualContentOrNull;
+      console.log('actualContentStr', actualContentStr);
+      const regex = /<a aria-describedby="footnote-label" href="#(fn-\d+-\d+)">/g;
+      const matches = [...actualContentStr.matchAll(regex)];
+      const capturingGroups = matches.map(match => match[1]); // Array of all "fn-..." parts
+      console.log('capturingGroups', capturingGroups);
+
+      capturingGroups.forEach((capturingGroup) => {
+        actualContentStr += `<li id="${capturingGroup}" class="footnote-item">${$(`#${capturingGroup}`).html()}</li>`;
+      },
+      );
+      console.log('actualContentStr', actualContentStr);
+      actualContentOrNull = actualContentStr;
+    }
+
+    /*
+    actualContent <h2>Footnotes</h2>
+<p>1 + 1 = 2 <trigger for="pop:footnotefn-1-1"><sup class="footnote-ref"><a aria-describedby="footnote-label" href="#fn-1-1">[1]</a></sup></trigger></p>
+<div id="examples" class="d-none">
+<p>1 + 1 = 2 <trigger for="pop:footnotefn-1-2"><sup class="footnote-ref"><a aria-describedby="footnote-label" href="#fn-1-2">[2]</a></sup></trigger></p>
+</div>
+<mb-temp-footnotes>
+<li id="fn-1-1" class="footnote-item"><p>Math</p>
+</li>
+<li id="fn-1-2" class="footnote-item"><p>Math</p>
+</li>
+</mb-temp-footnotes>
+
+    actualContentOrNull
+    <p>1 + 1 = 2 <trigger for="pop:footnotefn-1-2"><sup class="footnote-ref"><a aria-describedby="footnote-label" href="#fn-1-2">[2]</a></sup></trigger></p>
+
+    */
+
     actualContent = actualContentOrNull || '';
 
     if (actualContentOrNull === null && !isOptional) {
@@ -325,7 +365,6 @@ export function processPopoverSrc(node: MbNode, context: Context, pageSources: P
   if (hash) {
     const $ = cheerio.load(actualContent);
     actualContent = $(hash).html() || '';
-
     if (actualContent === '') {
       const error = new Error(`No such segment '${hash}' in file: ${actualFilePath}\n`
         + `Missing reference in ${context.cwf}`);
