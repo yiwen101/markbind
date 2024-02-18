@@ -218,26 +218,18 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
   } = variableProcessor.renderIncludeFile(actualFilePath, pageSources, node, context, filePath);
 
   let actualContent = nunjucksProcessed;
-  if (fsUtil.isMarkdownFileExt(path.extname(actualFilePath))) {
-    // console.log('actualContent', actualContent, 'isInline', isInline);
-    actualContent = isInline
-      ? renderMdInline(actualContent)
-      : renderMd(actualContent);
-    // console.log('at line 225');
-    // console.log('actualContent', actualContent);
-  }
-
+  
   // Process sources with or without hash, retrieving and appending
   // the appropriate children to a wrapped include element
   if (hash) {
     console.log('hash', hash);
     console.log('actualContent', actualContent);
     const $ = cheerio.load(actualContent);
-    // console.log('$', $);
     let actualContentOrNull = $(hash).html();
     if (actualContentOrNull) {
-      let actualContentStr = actualContentOrNull;
-      console.log('actualContentStr', actualContentStr);
+      actualContentOrNull = renderMd(actualContentOrNull);
+      console.log('actualContentStr', actualContentOrNull);
+      /*
       const regex = /<a aria-describedby="footnote-label" href="#(fn-\d+-\d+)">/g;
       const matches = [...actualContentStr.matchAll(regex)];
       const capturingGroups = matches.map(match => match[1]); // Array of all "fn-..." parts
@@ -249,6 +241,7 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
       );
       console.log('actualContentStr', actualContentStr);
       actualContentOrNull = actualContentStr;
+      */
     }
 
     /*
@@ -278,6 +271,13 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
 
       actualContent = cheerio.html(createErrorNode(node, error));
     }
+  } else if (fsUtil.isMarkdownFileExt(path.extname(actualFilePath))) {
+    // console.log('actualContent', actualContent, 'isInline', isInline);
+    actualContent = isInline
+      ? renderMdInline(actualContent)
+      : renderMd(actualContent);
+    // console.log('at line 225');
+    // console.log('actualContent', actualContent);
   }
 
   if (isTrim) {
