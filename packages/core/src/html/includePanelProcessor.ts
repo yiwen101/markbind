@@ -188,7 +188,7 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
     actualFilePath,
     // We can typecast here as we have checked for src above.
   } = _getSrcFlagsAndFilePaths(node, config);
-  
+
   // No need to process url contents
   if (isUrl) {
     _deleteIncludeAttributes(node);
@@ -230,7 +230,7 @@ export function processInclude(node: MbNode, context: Context, pageSources: Page
         : renderMd(actualContentOrNull);
     }
     actualContent = actualContentOrNull || '';
-    
+
     if (actualContentOrNull === null && !isOptional) {
       const error = new Error(`No such segment '${hash}' in file: ${actualFilePath}\n`
        + `Missing reference in ${context.cwf}`);
@@ -332,7 +332,7 @@ export function processPopoverSrc(node: MbNode, context: Context, pageSources: P
   if (hash) {
     const $ = cheerio.load(actualContent);
     actualContent = $(hash).html() || '';
-    
+
     if (actualContent === '') {
       const error = new Error(`No such segment '${hash}' in file: ${actualFilePath}\n`
         + `Missing reference in ${context.cwf}`);
